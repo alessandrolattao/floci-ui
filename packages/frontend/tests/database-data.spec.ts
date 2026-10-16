@@ -189,6 +189,32 @@ test('Cosmos preserves container links through create, edit, query, reload and h
     await expect(page.locator('.cosmos-panel')).toHaveCount(0)
 })
 
+test('Aurora DSQL connects as admin with an IAM token, without asking for credentials', async ({page}) => {
+    const cluster: CloudResource = {
+        cloud: 'aws', service: 'dsql', type: 'dsql-cluster', id: 'abcdefghijklmnopqrstuvwxyz', name: 'orders',
+        region: 'us-east-1', createdAt: null, metadata: {endpoint: 'abcdefghijklmnopqrstuvwxyz.dsql.us-east-1.localhost.floci.io'},
+    }
+    const requests: Array<{path: string; body: Record<string, unknown>}> = []
+    await mockApi(page, cluster, async (route, path) => {
+        if (!path.includes('/sql/')) return false
+        const body = route.request().postDataJSON() as Record<string, unknown>
+        requests.push({path, body})
+        if (path.endsWith('/sql/databases')) await route.fulfill({json: [{name: 'postgres', state: 'ONLINE', createdAt: null, isSystem: false}]})
+        else if (path.endsWith('/sql/tables')) await route.fulfill({json: [{schema: 'public', name: 'orders', type: 'table', rowCount: 3}]})
+        else await route.fulfill({json: sqlResult})
+        return true
+    })
+    await page.goto(workspacePath(cluster))
+    await expect(page.getByText('AURORA DSQL DATA PLANE')).toBeVisible()
+    await expect(page.getByLabel('Password', {exact: true})).toHaveCount(0)
+    await page.getByRole('button', {name: 'Connect', exact: true}).click()
+    await page.getByRole('button', {name: 'public.orders table 3 rows'}).click()
+    await expect(page.getByRole('cell', {name: 'row-1', exact: true})).toBeVisible()
+    expect(requests.map((request) => request.path.replace(/^.*\/sql\//, ''))).toEqual(['databases', 'tables', 'query'])
+    expect(requests.every((request) => request.path.startsWith('/api/clouds/aws/services/dsql/resources/abcdefghijklmnopqrstuvwxyz/sql/'))).toBe(true)
+    expect(requests.at(-1)?.body).toEqual({database: 'postgres', engine: 'postgresql', query: 'SELECT * FROM "public"."orders" LIMIT 100;'})
+})
+
 for (const type of ['sql-server', 'postgres-flexible-server']) {
     test(`${type} restores database/table context with credentials kept out of URL`, async ({page}) => {
         const resource = {...sql, type}

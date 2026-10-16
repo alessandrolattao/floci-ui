@@ -14,6 +14,10 @@ export interface SqlDataConnection {
     username: string
     password: string
     tlsMode: SqlTlsMode
+    /** The TLS server name, when it is not the server dialled. */
+    tlsServerName?: string
+    /** PEM certificates to verify the server against instead of the system's. */
+    tlsCa?: string
 }
 
 export interface SqlDataClient {

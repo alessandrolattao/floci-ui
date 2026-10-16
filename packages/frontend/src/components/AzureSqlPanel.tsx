@@ -40,8 +40,12 @@ export function AzureSqlPanel({
 }: AzureSqlPanelProps) {
   const accountId = useAccountId();
   const serverId = resource?.id;
+  const service = resource?.service ?? "database";
+  // Aurora DSQL signs in as admin with an IAM token, which the API mints: there
+  // is no username or password to ask for.
+  const iamAuth = resource?.cloud === "aws" && resource.type === "dsql-cluster";
   const engine: SqlEngine =
-    resource?.type === "postgres-flexible-server" ? "postgresql" : "azure-sql";
+    resource?.type === "postgres-flexible-server" || iamAuth ? "postgresql" : "azure-sql";
   const defaultDatabase = engine === "postgresql" ? "postgres" : "master";
   const defaultQuery =
     engine === "postgresql" ? POSTGRES_DEFAULT_QUERY : SQL_SERVER_DEFAULT_QUERY;
@@ -58,12 +62,13 @@ export function AzureSqlPanel({
   const tableName = searchParams.get("table");
   const [queryText, setQueryText] = useState(defaultQuery);
 
-  const credentials: SqlCredentials = { username, password };
+  const credentials: SqlCredentials = iamAuth ? {} : { username, password };
+  const hasCredentials = iamAuth || (Boolean(username) && Boolean(password));
   const databaseExists = databases.some((database) => database.name === selectedDatabase);
 
   const tablesQuery = useQuery({
     queryKey: ['sql-tables', accountId, cloud, serverId, engine, selectedDatabase, username],
-    queryFn: ({signal}) => listSqlTables(cloud, serverId ?? "", engine, selectedDatabase, credentials, signal),
+    queryFn: ({signal}) => listSqlTables(cloud, service, serverId ?? "", engine, selectedDatabase, credentials, signal),
     enabled: connected && databaseExists && runtimeReachable,
     gcTime: 0,
   });
@@ -73,12 +78,12 @@ export function AzureSqlPanel({
 
   const databasesMut = useMutation({
     mutationFn: () =>
-      listSqlDatabases(cloud, serverId ?? "", engine, credentials),
+      listSqlDatabases(cloud, service, serverId ?? "", engine, credentials),
   });
 
   const queryMut = useMutation({
     mutationFn: ({ database, query }: { database: string; query: string }) =>
-      querySql(cloud, serverId ?? "", engine, database, credentials, query),
+      querySql(cloud, service, serverId ?? "", engine, database, credentials, query),
   });
   const {mutate: executeQuery, reset: resetQuery} = queryMut;
 
@@ -100,7 +105,7 @@ export function AzureSqlPanel({
     setQueryText(defaultQuery);
   }, [administratorLogin, cloud, defaultDatabase, defaultQuery, serverId]);
 
-  if (cloud !== "azure") return null;
+  if (cloud !== "azure" && !iamAuth) return null;
 
   if (!serverId) {
     return (
@@ -115,7 +120,7 @@ export function AzureSqlPanel({
 
   function connect(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!username || !password) return;
+    if (!hasCredentials) return;
     queryMut.reset();
     loadDatabases();
   }
@@ -181,32 +186,36 @@ export function AzureSqlPanel({
         <div className="sql-connection-title">
           <Plug size={16} />
           <span>
-            <small>{engine === "postgresql" ? "POSTGRESQL DATA PLANE" : "SQL DATA PLANE"}</small>
+            <small>{iamAuth ? "AURORA DSQL DATA PLANE" : engine === "postgresql" ? "POSTGRESQL DATA PLANE" : "SQL DATA PLANE"}</small>
             <strong>{resource.name}</strong>
-            <em>{metadataString(resource.metadata.fullyQualifiedDomainName)}</em>
+            <em>{metadataString(resource.metadata.fullyQualifiedDomainName) || metadataString(resource.metadata.endpoint)}</em>
           </span>
         </div>
-        <label>
-          <span>Username</span>
-          <input
-            className="input"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            disabled={connected || !runtimeReachable}
-            autoComplete="username"
-          />
-        </label>
-        <label>
-          <span>Password</span>
-          <input
-            className="input"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            disabled={connected || !runtimeReachable}
-            autoComplete="current-password"
-          />
-        </label>
+        {!iamAuth && (
+          <>
+            <label>
+              <span>Username</span>
+              <input
+                className="input"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                disabled={connected || !runtimeReachable}
+                autoComplete="username"
+              />
+            </label>
+            <label>
+              <span>Password</span>
+              <input
+                className="input"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                disabled={connected || !runtimeReachable}
+                autoComplete="current-password"
+              />
+            </label>
+          </>
+        )}
         {connected ? (
           <button className="button" type="button" onClick={disconnect}>
             <Unplug size={14} />
@@ -219,8 +228,7 @@ export function AzureSqlPanel({
             disabled={
               !runtimeReachable ||
               databasesMut.isPending ||
-              !username ||
-              !password
+              !hasCredentials
             }
           >
             <Plug size={14} />
@@ -228,7 +236,9 @@ export function AzureSqlPanel({
           </button>
         )}
         <small className="sql-credential-note">
-          Credentials remain in this page only and are sent to the local API per request.
+          {iamAuth
+            ? "Signs in as admin with an IAM token the local API mints for each request."
+            : "Credentials remain in this page only and are sent to the local API per request."}
         </small>
         {connectionError && <div className="form-error">{connectionError}</div>}
       </form>
@@ -236,7 +246,9 @@ export function AzureSqlPanel({
       {!connected ? (
         <div className="empty compact sql-connect-empty">
           <h2>Connect to browse SQL data</h2>
-          <p>Use the administrator login configured for this local engine.</p>
+          <p>{iamAuth
+            ? "Connect to sign in as admin with an IAM token."
+            : "Use the administrator login configured for this local engine."}</p>
         </div>
       ) : (
         <div className="sql-explorer">

@@ -19,11 +19,13 @@ import { APIGatewayClient } from "@aws-sdk/client-api-gateway";
 import { CloudFormationClient } from "@aws-sdk/client-cloudformation";
 import { AppConfigClient } from "@aws-sdk/client-appconfig";
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
+import { DSQLClient } from "@aws-sdk/client-dsql";
 import { KinesisClient } from "@aws-sdk/client-kinesis";
 import { SageMakerClient } from "@aws-sdk/client-sagemaker";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { CloudFrontClient } from "@aws-sdk/client-cloudfront";
 import { Route53Client } from "@aws-sdk/client-route-53";
+import { STSClient } from "@aws-sdk/client-sts";
 
 const endpoint = process.env.FLOCI_ENDPOINT;
 const region = process.env.AWS_REGION || "us-east-1";
@@ -79,6 +81,8 @@ export type AwsClients = {
   ecs: ECSClient;
   cloudfront: CloudFrontClient;
   route53: Route53Client;
+  dsql: DSQLClient;
+  sts: STSClient;
 };
 
 export type AwsClientName = keyof AwsClients;
@@ -118,6 +122,8 @@ function buildClients(accountId: string): AwsClients {
     ecs: new ECSClient(base),
     cloudfront: new CloudFrontClient(base),
     route53: new Route53Client(base),
+    dsql: new DSQLClient(base),
+    sts: new STSClient(base),
   };
 }
 

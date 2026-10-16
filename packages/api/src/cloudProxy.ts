@@ -2,6 +2,7 @@ import {CloudAdapterRegistry} from './registry/CloudAdapterRegistry'
 import {AwsComputeAdapter} from './adapter-aws/AwsComputeAdapter'
 import {AwsNetworkingAdapter} from './adapter-aws/AwsNetworkingAdapter'
 import {AwsDatabaseAdapter} from './adapter-aws/AwsDatabaseAdapter'
+import {AwsDsqlAdapter} from './adapter-aws/AwsDsqlAdapter'
 import {AwsEksAdapter} from './adapter-aws/AwsEksAdapter'
 import {AwsStorageAdapter} from './adapter-aws/AwsStorageAdapter'
 import {AwsLogsAdapter} from './adapter-aws/AwsLogsAdapter'
@@ -83,6 +84,7 @@ export function createCloudAdapterRegistry(accountId?: string | null): CloudAdap
         new AwsDynamoDbAdapter(clients.dynamodb),
         new AwsEksAdapter(createEksService(clients.eks)),
         new AwsDatabaseAdapter(createRdsService(clients.rds), clients.rds),
+        new AwsDsqlAdapter(clients.dsql, clients.sts),
         new AwsComputeAdapter(ec2Service),
         new AwsNetworkingAdapter(ec2Service),
         new AwsServerlessAdapter(clients.lambda, clients.s3, clients.dynamodb, clients.sqs, clients.kinesis),

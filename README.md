@@ -83,7 +83,7 @@ docker run -p 4500:4500 -e FLOCI_ENDPOINT=http://host.docker.internal:4566 floci
 | Area | What you get |
 |---|---|
 | Storage | Object browser with prefixes, upload, download, copy, delete; Empty bucket for S3, including object versions and delete markers |
-| Databases | DynamoDB records with paged scans, key queries on the table or a secondary index, and a PartiQL editor; Cosmos DB and Azure SQL / PostgreSQL data explorers with a query editor; RDS update and snapshots |
+| Databases | DynamoDB records with paged scans, key queries on the table or a secondary index, and a PartiQL editor; Cosmos DB, Azure SQL / PostgreSQL and Aurora DSQL data explorers with a query editor (DSQL signs in with an IAM token); RDS update and snapshots |
 | Compute | EC2 launch, power actions, AMIs, tags, console output; EKS nodegroups and Fargate profiles; Lambda invoke with tailed logs |
 | Networking | VPC wizard, subnets, security groups, gateways, route tables, Elastic IPs |
 | Messaging | SQS send, receive and purge |
@@ -106,6 +106,7 @@ Generated from the service catalog and adapter registry, so it never drifts. Aft
 | Storage | Storage | ✅ | ✅ | ✅ | ✅ |
 | Storage | Table Storage | – | ✅ | – | – |
 | Databases | Database | ✅ | ✅ | ✅ | – |
+| Databases | Aurora DSQL | ✅ | – | – | – |
 | Databases | NoSQL | ✅ | ✅ | ✅ | – |
 | Networking | Networking | 👁 | ✅ | – | – |
 | Networking | Load Balancing | ✅ | – | – | – |

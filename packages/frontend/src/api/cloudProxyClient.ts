@@ -783,6 +783,7 @@ export async function queryFlatItemsByKey(
 
 export async function listSqlDatabases(
   cloud: CloudProvider,
+  service: string,
   serverId: string,
   engine: SqlEngine,
   credentials: SqlCredentials,
@@ -790,18 +791,19 @@ export async function listSqlDatabases(
 ): Promise<SqlDatabase[]> {
   const res = await apiClient.call<SqlDatabase[], SqlCredentials & { engine: SqlEngine }>(
     apiEndpointKeys.clouds.database.sql.databases,
-    requestOptions(cloud, "database", {
+    requestOptions(cloud, service, {
       signal,
       body: { ...credentials, engine },
       timeout: SQL_DATA_TIMEOUT_MS,
     }),
-    { cloud, id: serverId },
+    { cloud, service, id: serverId },
   );
   return res.data;
 }
 
 export async function listSqlTables(
   cloud: CloudProvider,
+  service: string,
   serverId: string,
   engine: SqlEngine,
   database: string,
@@ -813,18 +815,19 @@ export async function listSqlTables(
     SqlCredentials & { database: string; engine: SqlEngine }
   >(
     apiEndpointKeys.clouds.database.sql.tables,
-    requestOptions(cloud, "database", {
+    requestOptions(cloud, service, {
       signal,
       body: { ...credentials, database, engine },
       timeout: SQL_DATA_TIMEOUT_MS,
     }),
-    { cloud, id: serverId },
+    { cloud, service, id: serverId },
   );
   return res.data;
 }
 
 export async function querySql(
   cloud: CloudProvider,
+  service: string,
   serverId: string,
   engine: SqlEngine,
   database: string,
@@ -837,12 +840,12 @@ export async function querySql(
     SqlCredentials & { database: string; engine: SqlEngine; query: string }
   >(
     apiEndpointKeys.clouds.database.sql.query,
-    requestOptions(cloud, "database", {
+    requestOptions(cloud, service, {
       signal,
       body: { ...credentials, database, engine, query },
       timeout: SQL_DATA_TIMEOUT_MS,
     }),
-    { cloud, id: serverId },
+    { cloud, service, id: serverId },
   );
   return res.data;
 }

@@ -115,9 +115,10 @@ export interface KeyQuery {
     descending?: boolean
 }
 
+/** Empty for an engine that signs in with an IAM token, as Aurora DSQL does. */
 export interface SqlCredentials {
-    username: string
-    password: string
+    username?: string
+    password?: string
 }
 
 export type SqlEngine = 'azure-sql' | 'postgresql'

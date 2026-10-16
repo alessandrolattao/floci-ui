@@ -281,8 +281,9 @@ export interface CosmosQueryResult {
 }
 
 export interface SqlConnectionInput {
-    username: string
-    password: string
+    /** Absent for an engine that signs in with an IAM token, as Aurora DSQL does. */
+    username?: string
+    password?: string
     database?: string
     engine?: 'azure-sql' | 'postgresql'
 }

@@ -551,21 +551,21 @@ export class CloudProxyService {
         return adapter.listDatabaseOrderableInstanceClasses(engine)
     }
 
-    async listSqlDatabases(cloud: CloudProvider, serverId: string, connection: SqlConnectionInput): Promise<SqlDatabase[]> {
-        const adapter = this.requireAdapter(cloud, 'database')
-        if (!adapter.listSqlDatabases) throw new NotSupportedError(`SQL database browsing is not supported for ${cloud}/database`)
+    async listSqlDatabases(cloud: CloudProvider, service: CloudServiceType, serverId: string, connection: SqlConnectionInput): Promise<SqlDatabase[]> {
+        const adapter = this.requireAdapter(cloud, service)
+        if (!adapter.listSqlDatabases) throw new NotSupportedError(`SQL database browsing is not supported for ${cloud}/${service}`)
         return adapter.listSqlDatabases(serverId, connection)
     }
 
-    async listSqlTables(cloud: CloudProvider, serverId: string, connection: SqlConnectionInput): Promise<SqlTable[]> {
-        const adapter = this.requireAdapter(cloud, 'database')
-        if (!adapter.listSqlTables) throw new NotSupportedError(`SQL table browsing is not supported for ${cloud}/database`)
+    async listSqlTables(cloud: CloudProvider, service: CloudServiceType, serverId: string, connection: SqlConnectionInput): Promise<SqlTable[]> {
+        const adapter = this.requireAdapter(cloud, service)
+        if (!adapter.listSqlTables) throw new NotSupportedError(`SQL table browsing is not supported for ${cloud}/${service}`)
         return adapter.listSqlTables(serverId, connection)
     }
 
-    async querySql(cloud: CloudProvider, serverId: string, connection: SqlConnectionInput, query: string): Promise<SqlQueryResult> {
-        const adapter = this.requireAdapter(cloud, 'database')
-        if (!adapter.querySql) throw new NotSupportedError(`SQL query is not supported for ${cloud}/database`)
+    async querySql(cloud: CloudProvider, service: CloudServiceType, serverId: string, connection: SqlConnectionInput, query: string): Promise<SqlQueryResult> {
+        const adapter = this.requireAdapter(cloud, service)
+        if (!adapter.querySql) throw new NotSupportedError(`SQL query is not supported for ${cloud}/${service}`)
         return adapter.querySql(serverId, connection, query)
     }
 

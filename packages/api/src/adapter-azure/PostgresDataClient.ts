@@ -22,7 +22,11 @@ export class PostgresDataClient implements SqlDataClient {
             password: connection.password,
             ssl: connection.tlsMode === 'disable'
                 ? false
-                : {rejectUnauthorized: connection.tlsMode === 'verify'},
+                : {
+                    rejectUnauthorized: connection.tlsMode === 'verify',
+                    ...(connection.tlsServerName ? {servername: connection.tlsServerName} : {}),
+                    ...(connection.tlsCa ? {ca: connection.tlsCa} : {}),
+                },
             connectionTimeoutMillis: 10_000,
             query_timeout: 30_000,
             statement_timeout: 30_000,

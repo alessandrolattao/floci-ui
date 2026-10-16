@@ -5,6 +5,7 @@ export function dataExplorerKind(resource: CloudResource): 'dynamodb' | 'cosmos'
     if (resource.cloud === 'azure' && resource.service === 'nosql' && resource.type === 'cosmos-database') return 'cosmos'
     if (resource.cloud === 'azure' && resource.service === 'database' &&
         (resource.type === 'sql-server' || resource.type === 'postgres-flexible-server')) return 'sql'
+    if (resource.cloud === 'aws' && resource.service === 'dsql' && resource.type === 'dsql-cluster') return 'sql'
 }
 
 export function dataExplorerPath(resource: CloudResource): string | undefined {

@@ -261,36 +261,41 @@ export function createCloudRoutes(
         })
     })
 
-    app.post('/:cloud/services/database/resources/:id/sql/databases', async (c) => {
+    // The SQL explorer works for every service whose adapter browses SQL data:
+    // relational databases, and Aurora DSQL's clusters.
+    app.post('/:cloud/services/:service/resources/:id/sql/databases', async (c) => {
         const cloud = c.req.param('cloud') as CloudProvider
-        if (!isCloudProvider(cloud)) throw new NotFoundError('Unknown cloud')
+        const serviceType = c.req.param('service') as CloudServiceType
+        if (!isCloudProvider(cloud) || !isServiceType(serviceType)) throw new NotFoundError('Unknown cloud or service')
 
         return withRuntime(c, async () => {
             const connection = await c.req.json<SqlConnectionInput>()
-            const databases = await svc(c).listSqlDatabases(cloud, c.req.param('id'), connection)
+            const databases = await svc(c).listSqlDatabases(cloud, serviceType, c.req.param('id'), connection)
             return c.json(databases)
         })
     })
 
-    app.post('/:cloud/services/database/resources/:id/sql/tables', async (c) => {
+    app.post('/:cloud/services/:service/resources/:id/sql/tables', async (c) => {
         const cloud = c.req.param('cloud') as CloudProvider
-        if (!isCloudProvider(cloud)) throw new NotFoundError('Unknown cloud')
+        const serviceType = c.req.param('service') as CloudServiceType
+        if (!isCloudProvider(cloud) || !isServiceType(serviceType)) throw new NotFoundError('Unknown cloud or service')
 
         return withRuntime(c, async () => {
             const connection = await c.req.json<SqlConnectionInput>()
-            const tables = await svc(c).listSqlTables(cloud, c.req.param('id'), connection)
+            const tables = await svc(c).listSqlTables(cloud, serviceType, c.req.param('id'), connection)
             return c.json(tables)
         })
     })
 
-    app.post('/:cloud/services/database/resources/:id/sql/query', async (c) => {
+    app.post('/:cloud/services/:service/resources/:id/sql/query', async (c) => {
         const cloud = c.req.param('cloud') as CloudProvider
-        if (!isCloudProvider(cloud)) throw new NotFoundError('Unknown cloud')
+        const serviceType = c.req.param('service') as CloudServiceType
+        if (!isCloudProvider(cloud) || !isServiceType(serviceType)) throw new NotFoundError('Unknown cloud or service')
 
         return withRuntime(c, async () => {
             const body = await c.req.json<SqlConnectionInput & {query?: string}>()
             const {query = '', ...connection} = body
-            const result = await svc(c).querySql(cloud, c.req.param('id'), connection, query)
+            const result = await svc(c).querySql(cloud, serviceType, c.req.param('id'), connection, query)
             return c.json(result)
         })
     })

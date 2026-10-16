@@ -112,6 +112,11 @@ export const SERVICE_CATALOG = {
         description: 'Create and manage relational databases.',
         iconKey: 'database', group: 'Databases', order: 10,
     },
+    dsql: {
+        displayName: 'Aurora DSQL',
+        description: 'Serverless distributed SQL clusters that sign in with IAM.',
+        iconKey: 'database', group: 'Databases', order: 15,
+    },
     nosql: {
         displayName: 'NoSQL',
         // Both labels are declared even though each arrives with its own adapter,
