@@ -43,6 +43,8 @@ import {CloudProxyService} from './service/CloudProxyService'
 import {AzureServerlessAdapter} from './adapter-azure/AzureServerlessAdapter'
 import {AzureAppConfigAdapter} from './adapter-azure/AzureAppConfigAdapter'
 import {AzureKeyVaultAdapter} from './adapter-azure/AzureKeyVaultAdapter'
+import {AzureKeyVaultCertificatesAdapter} from './adapter-azure/AzureKeyVaultCertificatesAdapter'
+import {AzureKeyVaultKeysAdapter} from './adapter-azure/AzureKeyVaultKeysAdapter'
 import {AwsServerlessAdapter} from './adapter-aws/AwsServerlessAdapter'
 import {AwsParameterStoreAdapter} from './adapter-aws/AwsParameterStoreAdapter'
 import {AwsKmsAdapter} from './adapter-aws/AwsKmsAdapter'
@@ -59,6 +61,7 @@ import {AwsAppConfigAdapter} from './adapter-aws/AwsAppConfigAdapter'
 import {AwsKinesisAdapter} from './adapter-aws/AwsKinesisAdapter'
 import {AwsSageMakerAdapter} from './adapter-aws/AwsSageMakerAdapter'
 import {AwsEcsAdapter} from './adapter-aws/AwsEcsAdapter'
+import {AwsRegistryAdapter} from './adapter-aws/AwsRegistryAdapter'
 import {AwsCloudFrontAdapter} from './adapter-aws/AwsCloudFrontAdapter'
 import {AwsRoute53Adapter} from './adapter-aws/AwsRoute53Adapter'
 import {awsClientsForAccount, resolveAccountId} from './aws'
@@ -104,6 +107,7 @@ export function createCloudAdapterRegistry(accountId?: string | null): CloudAdap
         new AwsKinesisAdapter(clients.kinesis),
         new AwsSageMakerAdapter(clients.sagemaker),
         new AwsEcsAdapter(clients.ecs),
+        new AwsRegistryAdapter(clients.ecr),
         new AwsCloudFrontAdapter(clients.cloudfront),
         new AwsRoute53Adapter(clients.route53),
         new AzureStorageAdapter(),
@@ -140,6 +144,8 @@ export function createCloudAdapterRegistry(accountId?: string | null): CloudAdap
         new AwsCloudWatchAdapter(clients.cloudwatch),
         new AzureServerlessAdapter(),
         new AzureKeyVaultAdapter(),
+        new AzureKeyVaultKeysAdapter(),
+        new AzureKeyVaultCertificatesAdapter(),
         new AzureAppConfigAdapter(),
     ])
 }

@@ -14,7 +14,8 @@ import {awsMessagingSchema} from '../cloud-spi/messagingSchema'
 import {azureNoSqlSchema} from '../cloud-spi/noSqlSchema'
 import {awsDynamoDbSchema} from '../cloud-spi/dynamodbSchema'
 import {awsEksSchema} from '../cloud-spi/eksSchema'
-import {awsKmsSchema, ociKmsSchema} from '../cloud-spi/kmsSchema'
+import {awsKmsSchema, azureKmsSchema, ociKmsSchema} from '../cloud-spi/kmsSchema'
+import {azureCertificatesSchema} from '../cloud-spi/certificatesSchema'
 import {azureSecretsSchema} from '../cloud-spi/secretsSchema'
 import {awsStorageSchema, azureStorageSchema, gcpStorageSchema} from '../cloud-spi/storageSchema'
 import {awsSesEmailSchema} from '../cloud-spi/emailSchema'
@@ -41,6 +42,7 @@ import {CloudAdapterRegistry} from '../registry/CloudAdapterRegistry'
 import {CloudProxyService} from '../service/CloudProxyService'
 import type {RuntimeProbe} from '../service/runtimeProbe'
 import {DELETE_BATCH_TIMEOUT_MS} from '../adapter-aws/AwsStorageAdapter'
+import {AwsSesAdapter} from '../adapter-aws/AwsSesAdapter'
 import {createCloudRoutes, EMPTY_BUCKET_DEADLINE_MS, EMPTY_BUCKET_IDLE_TIMEOUT_SECONDS} from './clouds'
 
 function mockAdapter(cloud: CloudProvider, overrides: Partial<CloudServiceAdapter> = {}): CloudServiceAdapter {
@@ -471,6 +473,39 @@ describe('cloud schema routes', () => {
         expect(res.status).toBe(201)
         expect(body.metadata.key).toEqual({pk: 'item-1'})
         expect(calls).toEqual([{resourceId: 'orders', body: {pk: 'item-1', name: 'First item'}}])
+    })
+
+    test('returns raw MIME email search results and previews through the real routes and adapter', async () => {
+        const raw = Buffer.from([
+            'From: sender@example.test',
+            'To: recipient@example.test',
+            'Subject: Raw email through the router',
+            'MIME-Version: 1.0',
+            'Content-Type: text/html; charset=UTF-8',
+            '', '<p>Rendered through the mailbox API.</p>',
+        ].join('\r\n')).toString('base64')
+        const adapter = new AwsSesAdapter('http://floci.test', async () => Response.json({
+            messages: [{Id: 'raw-router-email', RawData: raw}],
+        }))
+        const app = appWithRoutes([adapter])
+
+        const list = await app.request('/api/clouds/aws/services/email/resources?search=recipient%40example.test')
+        const resources = await list.json()
+
+        expect(list.status).toBe(200)
+        expect(resources).toHaveLength(1)
+        expect(resources[0]).toMatchObject({
+            id: 'raw-router-email', name: 'Raw email through the router',
+            metadata: {
+                source: 'sender@example.test', toAddresses: ['recipient@example.test'],
+                htmlBody: expect.stringContaining('<p>Rendered through the mailbox API.</p>'),
+                rawData: raw,
+            },
+        })
+
+        const detail = await app.request('/api/clouds/aws/services/email/resources/raw-router-email')
+        expect(detail.status).toBe(200)
+        expect(await detail.json()).toEqual(resources[0])
     })
 
     test('clears the SES mailbox through the email adapter', async () => {
@@ -988,6 +1023,54 @@ describe('KMS crypto routes', () => {
         expect(await recovered.json()).toMatchObject({id: 'db-password'})
         expect((await app.request(`${route}/purge-deleted`, {method: 'POST'})).status).toBe(200)
         expect(called).toEqual(['recover:db-password', 'purge:db-password'])
+    })
+
+    test('dispatches key recovery and purge to the selected deleted key', async () => {
+        const called: string[] = []
+        const resource: CloudResource = {id: 'app-key', name: 'app-key', cloud: 'azure', service: 'kms', type: 'key', region: null, createdAt: null, metadata: {}}
+        const app = appWithRoutes([mockAdapter('azure', {
+            service: 'kms', schema: azureKmsSchema,
+            recover: async (id) => { called.push(`recover:${id}`); return resource },
+            purgeDeleted: async (id) => { called.push(`purge:${id}`) },
+        })])
+        const route = '/api/clouds/azure/services/kms/resources/app-key'
+        const recovered = await app.request(`${route}/recover`, {method: 'POST'})
+        expect(recovered.status).toBe(200)
+        expect(await recovered.json()).toMatchObject({id: 'app-key'})
+        expect((await app.request(`${route}/purge-deleted`, {method: 'POST'})).status).toBe(200)
+        expect(called).toEqual(['recover:app-key', 'purge:app-key'])
+    })
+
+    test('dispatches certificate recovery and purge to the selected deleted certificate', async () => {
+        const called: string[] = []
+        const resource: CloudResource = {id: 'app-tls', name: 'app-tls', cloud: 'azure', service: 'certificates', type: 'certificate', region: null, createdAt: null, metadata: {}}
+        const app = appWithRoutes([mockAdapter('azure', {
+            service: 'certificates', schema: azureCertificatesSchema,
+            recover: async (id) => { called.push(`recover:${id}`); return resource },
+            purgeDeleted: async (id) => { called.push(`purge:${id}`) },
+        })])
+        const route = '/api/clouds/azure/services/certificates/resources/app-tls'
+        const recovered = await app.request(`${route}/recover`, {method: 'POST'})
+        expect(recovered.status).toBe(200)
+        expect(await recovered.json()).toMatchObject({id: 'app-tls'})
+        expect((await app.request(`${route}/purge-deleted`, {method: 'POST'})).status).toBe(200)
+        expect(called).toEqual(['recover:app-tls', 'purge:app-tls'])
+    })
+
+    test('reports certificate recovery as unsupported when the adapter has no recover', async () => {
+        const app = appWithRoutes([mockAdapter('azure', {service: 'certificates', schema: azureCertificatesSchema})])
+        const route = '/api/clouds/azure/services/certificates/resources/app-tls'
+
+        expect((await app.request(`${route}/recover`, {method: 'POST'})).status).toBe(501)
+        expect((await app.request(`${route}/purge-deleted`, {method: 'POST'})).status).toBe(501)
+    })
+
+    test('reports key recovery as unsupported when the adapter has no recover', async () => {
+        const app = appWithRoutes([mockAdapter('azure', {service: 'kms', schema: azureKmsSchema})])
+        const route = '/api/clouds/azure/services/kms/resources/app-key'
+
+        expect((await app.request(`${route}/recover`, {method: 'POST'})).status).toBe(501)
+        expect((await app.request(`${route}/purge-deleted`, {method: 'POST'})).status).toBe(501)
     })
 
     test('reports secret recovery as unsupported when the adapter has no recover', async () => {

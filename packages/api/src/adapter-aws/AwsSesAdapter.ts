@@ -1,6 +1,7 @@
 import {httpStatusToCloudError, NotSupportedError, RuntimeError, RuntimeUnavailableError} from '../cloud-spi/errors'
 import {awsSesEmailSchema} from '../cloud-spi/emailSchema'
 import type {CloudResource, CloudServiceAdapter, CreateResourceInput, ResourceQuery, ServiceSchema} from '../cloud-spi/types'
+import PostalMime, {type Address, type Email} from 'postal-mime'
 
 interface FlociSesMessage {
     Id?: string
@@ -47,7 +48,8 @@ export class AwsSesAdapter implements CloudServiceAdapter {
 
     async list(query: ResourceQuery = {}): Promise<CloudResource[]> {
         const messages = await this.fetchInbox()
-        const resources = messages.map(messageToResource)
+        const resources: CloudResource[] = []
+        for (const message of messages) resources.push(await messageToResource(message))
         return filterBySearch(resources, query.search)
     }
 
@@ -101,12 +103,23 @@ export class AwsSesAdapter implements CloudServiceAdapter {
     }
 }
 
-function messageToResource(message: FlociSesMessage): CloudResource {
+async function messageToResource(message: FlociSesMessage): Promise<CloudResource> {
     const id = message.Id ?? ''
     const raw = typeof message.RawData === 'string'
+    let parsed: Email | undefined
+    if (raw && message.RawData) {
+        try {
+            parsed = await PostalMime.parse(Buffer.from(message.RawData, 'base64'), {
+                maxNestingDepth: 20,
+                maxHeadersSize: 128 * 1024,
+            })
+        } catch {
+            // A malformed message must not hide the remaining mailbox or its raw data.
+        }
+    }
     return {
         id,
-        name: message.Subject?.trim() || '(no subject)',
+        name: (message.Subject ?? parsed?.subject)?.trim() || '(no subject)',
         cloud: 'aws',
         service: 'email',
         type: 'email',
@@ -116,17 +129,21 @@ function messageToResource(message: FlociSesMessage): CloudResource {
         metadata: {
             provider: 'aws',
             emailService: 'ses',
-            source: message.Source ?? null,
-            toAddresses: message.Destination?.ToAddresses ?? [],
-            ccAddresses: message.Destination?.CcAddresses ?? [],
-            bccAddresses: message.Destination?.BccAddresses ?? [],
-            replyToAddresses: message.ReplyToAddresses ?? [],
-            textBody: message.Body?.text_part ?? null,
-            htmlBody: message.Body?.html_part ?? null,
+            source: message.Source ?? addresses(parsed?.from ? [parsed.from] : [])[0] ?? null,
+            toAddresses: message.Destination?.ToAddresses ?? addresses(parsed?.to),
+            ccAddresses: message.Destination?.CcAddresses ?? addresses(parsed?.cc),
+            bccAddresses: message.Destination?.BccAddresses ?? addresses(parsed?.bcc),
+            replyToAddresses: message.ReplyToAddresses ?? addresses(parsed?.replyTo),
+            textBody: message.Body?.text_part ?? parsed?.text ?? null,
+            htmlBody: message.Body?.html_part ?? parsed?.html ?? null,
             rawData: message.RawData ?? null,
             messageType: raw ? 'raw' : 'simple',
         },
     }
+}
+
+function addresses(values: Address[] = []): string[] {
+    return values.flatMap(value => value.group ? value.group.map(mailbox => mailbox.address) : [value.address])
 }
 
 function filterBySearch(resources: CloudResource[], search?: string): CloudResource[] {

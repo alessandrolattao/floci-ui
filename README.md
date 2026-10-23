@@ -92,6 +92,11 @@ docker run -p 4500:4500 -e FLOCI_ENDPOINT=http://host.docker.internal:4566 floci
 | Email | SES mailbox with HTML, text and raw MIME preview |
 | Settings | Light, dark or system theme; account switcher |
 
+For SES raw messages, the mailbox decodes the captured MIME headers and bodies
+for search and preview while preserving the original `RawData`. Explicit fields
+returned by the runtime take precedence over MIME-derived values. Messages that
+cannot be parsed remain available in the raw view.
+
 ## Supported Services
 
 Generated from the service catalog and adapter registry, so it never drifts. After changing either, run `cd packages/api && bun run scripts/service-matrix.ts`.
@@ -102,6 +107,7 @@ Generated from the service catalog and adapter registry, so it never drifts. Aft
 | Compute | k8s Engine | 👁 | 👁 | ✅ | ✅ |
 | Compute | Serverless | ✅ | ✅ | ✅ | ✅ |
 | Compute | Containers | ✅ | ✅ | ✅ | – |
+| Compute | Container Registry | ✅ | – | – | – |
 | Compute | SageMaker AI | ✅ | – | – | – |
 | Storage | Storage | ✅ | ✅ | ✅ | ✅ |
 | Storage | Table Storage | – | ✅ | – | – |
@@ -126,7 +132,8 @@ Generated from the service catalog and adapter registry, so it never drifts. Aft
 | Security | Identity | ✅ | – | – | ✅ |
 | Security | Cognito | ✅ | – | – | – |
 | Security | Secrets Manager | ✅ | ✅ | ✅ | ✅ |
-| Security | Key Management | ✅ | – | – | ✅ |
+| Security | Key Management | ✅ | ✅ | – | ✅ |
+| Security | Certificates | – | ✅ | – | – |
 | Security | Parameter Store | ✅ | – | – | – |
 | Observability | Logs | ✅ | – | 👁 | – |
 | Observability | CloudWatch | ✅ | – | – | – |

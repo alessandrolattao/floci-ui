@@ -383,6 +383,40 @@ export async function purgeDeletedSecretResource(cloud: CloudProvider, id: strin
   );
 }
 
+export async function recoverKmsResource(cloud: CloudProvider, id: string, signal?: AbortSignal): Promise<CloudResource> {
+  const res = await apiClient.call<CloudResource>(
+    apiEndpointKeys.clouds.resources.recoverKms,
+    requestOptions(cloud, "kms", { signal }),
+    { cloud, id },
+  );
+  return res.data;
+}
+
+export async function purgeDeletedKmsResource(cloud: CloudProvider, id: string, signal?: AbortSignal): Promise<void> {
+  await apiClient.call(
+    apiEndpointKeys.clouds.resources.purgeDeletedKms,
+    requestOptions(cloud, "kms", { signal }),
+    { cloud, id },
+  );
+}
+
+export async function recoverCertificateResource(cloud: CloudProvider, id: string, signal?: AbortSignal): Promise<CloudResource> {
+  const res = await apiClient.call<CloudResource>(
+    apiEndpointKeys.clouds.resources.recoverCertificate,
+    requestOptions(cloud, "certificates", { signal }),
+    { cloud, id },
+  );
+  return res.data;
+}
+
+export async function purgeDeletedCertificateResource(cloud: CloudProvider, id: string, signal?: AbortSignal): Promise<void> {
+  await apiClient.call(
+    apiEndpointKeys.clouds.resources.purgeDeletedCertificate,
+    requestOptions(cloud, "certificates", { signal }),
+    { cloud, id },
+  );
+}
+
 export interface QueueMessageAttribute {
   dataType: string;
   value: string;

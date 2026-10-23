@@ -297,6 +297,18 @@ export class CloudProxyService {
         return adapter.cancelDeletion(id)
     }
 
+    async recoverKms(cloud: CloudProvider, id: string): Promise<CloudResource> {
+        const adapter = this.requireAdapter(cloud, 'kms')
+        if (!adapter.recover) throw new NotSupportedError(`${cloud}/kms recover is not supported`)
+        return adapter.recover(id)
+    }
+
+    async purgeDeletedKms(cloud: CloudProvider, id: string): Promise<void> {
+        const adapter = this.requireAdapter(cloud, 'kms')
+        if (!adapter.purgeDeleted) throw new NotSupportedError(`${cloud}/kms purgeDeleted is not supported`)
+        await adapter.purgeDeleted(id)
+    }
+
     async recoverSecret(cloud: CloudProvider, id: string): Promise<CloudResource> {
         const adapter = this.requireAdapter(cloud, 'secrets')
         if (!adapter.recover) throw new NotSupportedError(`${cloud}/secrets recover is not supported`)
@@ -306,6 +318,18 @@ export class CloudProxyService {
     async purgeDeletedSecret(cloud: CloudProvider, id: string): Promise<void> {
         const adapter = this.requireAdapter(cloud, 'secrets')
         if (!adapter.purgeDeleted) throw new NotSupportedError(`${cloud}/secrets purgeDeleted is not supported`)
+        await adapter.purgeDeleted(id)
+    }
+
+    async recoverCertificate(cloud: CloudProvider, id: string): Promise<CloudResource> {
+        const adapter = this.requireAdapter(cloud, 'certificates')
+        if (!adapter.recover) throw new NotSupportedError(`${cloud}/certificates recover is not supported`)
+        return adapter.recover(id)
+    }
+
+    async purgeDeletedCertificate(cloud: CloudProvider, id: string): Promise<void> {
+        const adapter = this.requireAdapter(cloud, 'certificates')
+        if (!adapter.purgeDeleted) throw new NotSupportedError(`${cloud}/certificates purgeDeleted is not supported`)
         await adapter.purgeDeleted(id)
     }
 

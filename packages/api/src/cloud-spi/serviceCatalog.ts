@@ -92,6 +92,14 @@ export const SERVICE_CATALOG = {
         group: 'Compute',
         order: 40,
     },
+    registry: {
+        displayName: 'Container Registry',
+        displayNameByCloud: {aws: 'ECR'},
+        description: 'Store and manage container images.',
+        iconKey: 'registry',
+        group: 'Compute',
+        order: 45,
+    },
     sagemaker: {
         displayName: 'SageMaker AI',
         description: 'Build and host machine learning models.',
@@ -231,11 +239,19 @@ export const SERVICE_CATALOG = {
     },
     kms: {
         displayName: 'Key Management',
-        displayNameByCloud: {aws: 'KMS', oci: 'Vault'},
+        displayNameByCloud: {aws: 'KMS', azure: 'Key Vault Keys', oci: 'Vault'},
         description: 'Create and manage encryption keys.',
         iconKey: 'kms',
         group: 'Security',
         order: 20,
+    },
+    certificates: {
+        displayName: 'Certificates',
+        displayNameByCloud: {azure: 'Key Vault Certificates'},
+        description: 'Issue and manage certificates.',
+        iconKey: 'kms',
+        group: 'Security',
+        order: 25,
     },
     parameters: {
         displayName: 'Parameter Store',

@@ -40,6 +40,9 @@ importers:
       '@aws-sdk/client-ec2':
         specifier: ^3.1140.0
         version: 3.1146.0
+      '@aws-sdk/client-ecr':
+        specifier: ^3.1140.0
+        version: 3.1146.0
       '@aws-sdk/client-ecs':
         specifier: ^3.1140.0
         version: 3.1149.0
@@ -115,6 +118,9 @@ importers:
       pg:
         specifier: ^8.22.0
         version: 8.23.0
+      postal-mime:
+        specifier: 2.7.5
+        version: 2.7.5
       saxes:
         specifier: ^6.0.0
         version: 6.0.0
@@ -290,6 +296,10 @@ packages:
 
   '@aws-sdk/client-ec2@3.1146.0':
     resolution: {integrity: sha512-3z61SecUOH3OCdYyNPHHoHSxZpbFlTxscSsLvBL6zUAwsnpznKZWDTGtjcJMXIUBERpT3Sopnp8Vy+zAUcT6nQ==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/client-ecr@3.1146.0':
+    resolution: {integrity: sha512-6SxQK33Jye0WHjOld95b9S12eHIYtPfpZhuAv9HYCMQYJJyVDhsV8BNWwsNjLEchTc/yjS8ksmzc8MhApDcD3g==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/client-ecs@3.1149.0':
@@ -2227,6 +2237,9 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
+  postal-mime@2.7.5:
+    resolution: {integrity: sha512-GNEXKvWFQnbgO5NlrGzVa0FmWzBZ24PersAWErttSg1Hjpf0ATxTwS5DOMGaOpTG6bUh5cTr7xi0jAD942wCJA==}
+
   postcss-value-parser@4.2.0:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
 
@@ -2915,6 +2928,17 @@ snapshots:
       '@aws-sdk/middleware-sdk-ec2': 3.972.60
       '@aws-sdk/types': 3.974.6
       '@smithy/core': 3.35.0
+      '@smithy/fetch-http-handler': 5.8.0
+      '@smithy/node-http-handler': 4.12.1
+      '@smithy/types': 4.19.0
+      tslib: 2.8.1
+
+  '@aws-sdk/client-ecr@3.1146.0':
+    dependencies:
+      '@aws-sdk/core': 3.978.2
+      '@aws-sdk/credential-provider-node': 3.972.85
+      '@aws-sdk/types': 3.974.6
+      '@smithy/core': 3.35.2
       '@smithy/fetch-http-handler': 5.8.0
       '@smithy/node-http-handler': 4.12.1
       '@smithy/types': 4.19.0
@@ -5286,6 +5310,8 @@ snapshots:
   playwright@1.63.0:
     dependencies:
       playwright-core: 1.63.0
+
+  postal-mime@2.7.5: {}
 
   postcss-value-parser@4.2.0: {}
 
