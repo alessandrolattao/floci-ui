@@ -8,6 +8,7 @@ import {
     UpdateClusterCommand,
 } from '@aws-sdk/client-dsql'
 import {GetSessionTokenCommand, type STSClient} from '@aws-sdk/client-sts'
+import {endpoint} from '../aws'
 import {NotFoundError, RuntimeError, ValidationError} from '../cloud-spi/errors'
 import type {SqlQueryResult} from '../cloud-spi/types'
 import type {SqlDataClient, SqlDataConnection} from '../adapter-azure/MssqlDataClient'
@@ -206,6 +207,27 @@ describe('AwsDsqlAdapter', () => {
 
         expect(fetched).toEqual(['http://floci:4566/_floci/ca.pem'])
         await expect(unreachable.querySql(IDENTIFIER, {}, 'SELECT 1')).rejects.toBeInstanceOf(RuntimeError)
+    })
+
+    test('reaches Floci at the API\'s own endpoint by default, so FLOCI_ENDPOINT may be left unset', async () => {
+        const fetched: string[] = []
+        const data = new RecordingDataClient()
+        const adapter = new AwsDsqlAdapter(
+            {send: clusterOnly} as unknown as DSQLClient,
+            {send: sessionOnly} as unknown as STSClient,
+            undefined,
+            data,
+            async () => ({address: '127.0.0.1'}),
+            async (url) => {
+                fetched.push(url)
+                return FLOCI_CA
+            },
+        )
+
+        await adapter.querySql(IDENTIFIER, {}, 'SELECT 1')
+
+        expect(fetched).toEqual([new URL('/_floci/ca.pem', endpoint).toString()])
+        expect(data.connections[0]).toMatchObject({server: '127.0.0.1', tlsServerName: ENDPOINT, tlsCa: FLOCI_CA})
     })
 
     test('asks STS for session credentials once while they are fresh', async () => {

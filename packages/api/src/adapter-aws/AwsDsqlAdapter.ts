@@ -11,7 +11,7 @@ import {
 } from '@aws-sdk/client-dsql'
 import {DsqlSigner} from '@aws-sdk/dsql-signer'
 import {GetSessionTokenCommand, type STSClient} from '@aws-sdk/client-sts'
-import {awsClients} from '../aws'
+import {awsClients, endpoint as flociApiEndpoint} from '../aws'
 import {NotFoundError, RuntimeError, ValidationError} from '../cloud-spi/errors'
 import {awsDsqlSchema} from '../cloud-spi/dsqlSchema'
 import type {
@@ -78,7 +78,7 @@ export class AwsDsqlAdapter implements CloudServiceAdapter {
     constructor(
         private readonly dsql: DSQLClient = awsClients.dsql,
         private readonly sts: STSClient = awsClients.sts,
-        private readonly flociEndpoint: string | null = process.env.FLOCI_ENDPOINT || null,
+        private readonly flociEndpoint: string | null = flociApiEndpoint,
         private readonly dataClient: SqlDataClient = new PostgresDataClient(),
         private readonly resolve: Resolve = (host) => lookup(host),
         private readonly fetchText: FetchText = readText,
@@ -216,7 +216,7 @@ export class AwsDsqlAdapter implements CloudServiceAdapter {
      * Floci's network cannot resolve the endpoint's public name to Floci. The
      * connection therefore goes to Floci's address, as an IP: pg sends the host
      * it dials as the server name whenever that host is a name, which would
-     * replace the endpoint's. Without FLOCI_ENDPOINT the endpoint is dialled.
+     * replace the endpoint's. With no Floci endpoint the endpoint is dialled.
      */
     private async serverAddress(endpoint: string): Promise<string> {
         if (!this.flociEndpoint) return endpoint

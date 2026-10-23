@@ -29,8 +29,9 @@ import { Route53Client } from "@aws-sdk/client-route-53";
 import { STSClient } from "@aws-sdk/client-sts";
 
 // Same default as runtimeProbe and the SES adapter. Without one, the SDK would
-// send every call to real AWS.
-const endpoint = process.env.FLOCI_ENDPOINT || "http://localhost:4566";
+// send every call to real AWS. Adapters that reach Floci beyond the SDK, such
+// as Aurora DSQL's data connection, use it too.
+export const endpoint = process.env.FLOCI_ENDPOINT || "http://localhost:4566";
 const region = process.env.AWS_REGION || "us-east-1";
 
 // Floci derives the AWS account from AWS_ACCESS_KEY_ID: a value that is exactly
